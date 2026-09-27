@@ -1,7 +1,35 @@
+from decimal import Decimal
+
+from django.db.models import Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import AlunoForm, CursoForm
 from .models import Aluno, Curso
+
+
+def dashboard(request):
+    total_alunos = Aluno.objects.count()
+    matriculas_ativas = Aluno.objects.filter(matriculado=True).count()
+    cursos_total = Curso.objects.count()
+    valor_matriculas_ativas = (
+        Aluno.objects.filter(matriculado=True).aggregate(total=Sum('preco_matricula'))['total']
+        or Decimal('0.00')
+    )
+
+    context = {
+        'total_alunos': total_alunos,
+        'matriculas_ativas': matriculas_ativas,
+        'cursos_total': cursos_total,
+        'aguardando_matricula': total_alunos - matriculas_ativas,
+        'valor_matriculas_ativas': valor_matriculas_ativas,
+        'alunos_recentes': Aluno.objects.select_related('curso').order_by(
+            '-data_matricula', '-pk'
+        )[:5],
+        'cursos_destaque': Curso.objects.annotate(
+            total_alunos=Count('aluno')
+        ).order_by('-total_alunos', 'nome')[:5],
+    }
+    return render(request, 'aluno/dashboard.html', context)
 
 
 def aluno(request):

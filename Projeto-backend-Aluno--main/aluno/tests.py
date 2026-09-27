@@ -1,6 +1,47 @@
 from django.test import TestCase
+from django.urls import reverse
 
 from .models import Aluno, Curso
+
+
+class DashboardTests(TestCase):
+	def test_dashboard_exibe_indicadores(self):
+		curso = Curso.objects.create(nome='Sistemas', carga_horaria=3000, turno='N')
+		Aluno.objects.create(
+			nome='Lia Costa',
+			curso=curso,
+			bio='Estudante',
+			preco_matricula='875.50',
+			matriculado=True,
+			data_matricula='2026-09-20',
+			matricula='DASH-001',
+			cpf='123.456.789-01',
+			email='lia@example.com',
+		)
+		Aluno.objects.create(
+			nome='Noa Lima',
+			curso=curso,
+			bio='Estudante',
+			preco_matricula='900.00',
+			matriculado=False,
+			data_matricula='2026-09-21',
+			matricula='DASH-002',
+			cpf='987.654.321-01',
+			email='noa@example.com',
+		)
+
+		response = self.client.get(reverse('home'))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.context['total_alunos'], 2)
+		self.assertEqual(response.context['matriculas_ativas'], 1)
+		self.assertEqual(response.context['aguardando_matricula'], 1)
+		self.assertEqual(response.context['cursos_total'], 1)
+		self.assertEqual(response.context['valor_matriculas_ativas'], 875.50)
+		self.assertContains(response, 'Visão geral')
+		self.assertContains(response, 'R$ 875,50')
+		self.assertContains(response, 'Lia Costa')
+		self.assertContains(response, 'Noa Lima')
 
 
 class AlunoViewsTests(TestCase):
@@ -39,6 +80,32 @@ class AlunoViewsTests(TestCase):
 		self.assertContains(response, 'Engenharia de Software')
 		self.assertContains(response, 'name="cpf"')
 		self.assertContains(response, 'name="email"')
+
+	def test_paginas_de_gestao_linkam_para_o_dashboard(self):
+		aluno = Aluno.objects.create(
+			nome='Joana Alves',
+			curso=self.curso,
+			bio='Estudante',
+			preco_matricula='700.00',
+			data_matricula='2026-09-27',
+			matricula='LINK-001',
+			cpf='111.222.333-44',
+			email='joana@example.com',
+		)
+		paths = (
+			'/aluno/',
+			'/aluno/novo/',
+			f'/aluno/{aluno.pk}/editar/',
+			f'/aluno/{aluno.pk}/excluir/',
+			'/aluno/cursos/',
+			'/aluno/cursos/novo/',
+			f'/aluno/cursos/{self.curso.pk}/editar/',
+			f'/aluno/cursos/{self.curso.pk}/excluir/',
+		)
+
+		for path in paths:
+			with self.subTest(path=path):
+				self.assertContains(self.client.get(path), 'href="/"')
 
 	def test_lista_edita_e_exclui_aluno(self):
 		aluno = Aluno.objects.create(

@@ -1,53 +1,82 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Aluno
+from django.shortcuts import get_object_or_404, redirect, render
+
+from .forms import AlunoForm, CursoForm
+from .models import Aluno, Curso
+
+
 def aluno(request):
- alunos = Aluno.objects.all()
- return render(request, 'aluno.html', {'alunos': alunos})
+    alunos = Aluno.objects.select_related('curso').all()
+    return render(request, 'aluno.html', {'alunos': alunos})
+
 
 def criar_aluno(request):
- if request.method == 'POST':
-    nome = request.POST['nome']
-    curso = request.POST['curso']
-    bio = request.POST.get('bio', '')
-    preco_matricula = request.POST['preco_matricula']
-    matriculado = request.POST.get('matriculado') == 'on'
-    data_matricula = request.POST['data_matricula']
+    form = AlunoForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('aluno')
 
-    Aluno.objects.create(
-        nome=nome,
-        curso=curso,
-        bio=bio,
-        preco_matricula=preco_matricula,
-        matriculado=matriculado,
-        data_matricula=data_matricula,
-    )
-    return redirect('aluno')
- 
- return render(request, 'aluno/form_aluno.html', {'titulo': 'Novo Aluno'})
+    return render(request, 'aluno/form_aluno.html', {
+        'form': form,
+        'titulo': 'Novo Aluno',
+    })
+
 
 def editar_aluno(request, pk):
-    aluno = get_object_or_404(Aluno, pk=pk)
-
-    if request.method == 'POST':
-        aluno.nome = request.POST['nome']
-        aluno.curso = request.POST['curso']
-        aluno.bio = request.POST.get('bio', '')
-        aluno.preco_matricula = request.POST['preco_matricula']
-        aluno.matriculado = request.POST.get('matriculado') == 'on'
-        aluno.data_matricula = request.POST['data_matricula']
-        aluno.save()
+    aluno_obj = get_object_or_404(Aluno, pk=pk)
+    form = AlunoForm(request.POST or None, instance=aluno_obj)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
         return redirect('aluno')
-    
-    return render(request, 'aluno/form_aluno.html', {'aluno': aluno, 'titulo': f'Editar: {aluno.nome}'})
+
+    return render(request, 'aluno/form_aluno.html', {
+        'form': form,
+        'titulo': f'Editar: {aluno_obj.nome}',
+    })
+
 
 def excluir_aluno(request, pk):
- aluno = get_object_or_404(Aluno, pk=pk)
+    aluno_obj = get_object_or_404(Aluno, pk=pk)
+    if request.method == 'POST':
+        aluno_obj.delete()
+        return redirect('aluno')
 
- if request.method == 'POST':
-    aluno.delete()
-    return redirect('aluno')
- 
- return render(request, 'aluno/confirmar_exclusao.html', {'aluno': aluno})
+    return render(request, 'aluno/confirmar_exclusao.html', {'aluno': aluno_obj})
 
 
-# Create your views here.
+def cursos(request):
+    lista_cursos = Curso.objects.all()
+    return render(request, 'aluno/cursos.html', {'cursos': lista_cursos})
+
+
+def criar_curso(request):
+    form = CursoForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('cursos')
+
+    return render(request, 'aluno/form_curso.html', {
+        'form': form,
+        'titulo': 'Novo Curso',
+    })
+
+
+def editar_curso(request, pk):
+    curso = get_object_or_404(Curso, pk=pk)
+    form = CursoForm(request.POST or None, instance=curso)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('cursos')
+
+    return render(request, 'aluno/form_curso.html', {
+        'form': form,
+        'titulo': f'Editar: {curso.nome}',
+    })
+
+
+def excluir_curso(request, pk):
+    curso = get_object_or_404(Curso, pk=pk)
+    if request.method == 'POST':
+        curso.delete()
+        return redirect('cursos')
+
+    return render(request, 'aluno/confirmar_exclusao_curso.html', {'curso': curso})

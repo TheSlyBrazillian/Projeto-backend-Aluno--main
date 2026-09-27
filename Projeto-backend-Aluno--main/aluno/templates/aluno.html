@@ -10,7 +10,8 @@
 
     <nav class="navbar navbar-dark bg-dark mb-4">
         <div class="container">
-            <span class="navbar-brand mb-0 h1">🎓 Área do Aluno</span>
+            <a class="navbar-brand mb-0 h1" href="{% url 'aluno' %}">Área do Aluno</a>
+            <a class="btn btn-outline-light btn-sm" href="{% url 'cursos' %}">Gerenciar cursos</a>
         </div>
     </nav>
 
@@ -31,6 +32,11 @@
                         <tr>
                             <th>Nome</th>
                             <th>Curso</th>
+                            <th>Matrícula</th>
+                            <th>CPF</th>
+                            <th>E-mail</th>
+                            <th>Telefone</th>
+                            <th>Idade</th>
                             <th>Bio</th>
                             <th>Preço de matricula</th>
                             <th>Status de matricula</th>
@@ -43,6 +49,11 @@
                         <tr>
                             <td class="fw-semibold">{{ aluno.nome }}</td>
                             <td><span class="badge bg-secondary">{{ aluno.curso }}</span></td>
+                            <td>{{ aluno.matricula }}</td>
+                            <td>{{ aluno.cpf }}</td>
+                            <td>{{ aluno.email }}</td>
+                            <td>{{ aluno.telefone|default:"—" }}</td>
+                            <td>{{ aluno.idade|default:"—" }}</td>
                             <td class="text-muted">{{ aluno.bio|default:"—" }}</td>
                             <td>R$ {{ aluno.preco_matricula|floatformat:2 }}</td>
                             <td>
